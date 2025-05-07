@@ -41,8 +41,8 @@ async function drawChart() {
 
   var options = {
     chart: {
-      title: 'Suicidal Thoughts by Gender',
-      subtitle: 'Comparison between males and females who have had suicidal thoughts'
+      title: 'Självmordstankar mellan kön',
+      subtitle: 'Jämförelse mellan män och kvinnor'
     },
     bars: 'vertical',
     hAxis: {

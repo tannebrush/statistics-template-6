@@ -1,8 +1,8 @@
 import express from 'express';
+import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import sstatparts from './sstatparts.js';
-import dbRouter from './dbRouter.js';
 
 // Port to start the web server on
 const port = 3005;
@@ -48,19 +48,16 @@ app.use((req, res, next) => {
     let file = req.url.slice(1).split('?')[0].split('/');
     file = path.join(dirname, '..', ...file);
     if (fs.existsSync(file)) {
-      try {
-        let content = fs.readFileSync(file, 'utf-8').split('\n');
-        let imports = [];
-        while (content[0].trim().startsWith('import')) {
-          imports.push(content.shift());
-        }
-        imports.length && imports.push('\n');
-        content = imports.join('\n') + `export default async () => { ${content.join('\n')} }`;
-        res.type('application/javascript');
-        res.send(content);
-        return;
+      let content = fs.readFileSync(file, 'utf-8').split('\n');
+      let imports = [];
+      while (content[0].trim().startsWith('import')) {
+        imports.push(content.shift());
       }
-      catch (e) { res.send(''); }
+      imports.length && imports.push('\n');
+      content = imports.join('\n') + `export default async () => { ${content.join('\n')} }`;
+      res.type('application/javascript');
+      res.send(content);
+      return;
     }
   }
   next();
@@ -101,7 +98,38 @@ app.get('/api/getMainScript', (_req, res) => {
   );
 });
 
-// Set up database api
-let databasesFolder = path.join(dirname, '..', 'databases');
-let sqliteFolder = path.join(databasesFolder, 'sqlite-dbs');
-dbRouter(app, databasesFolder, sqliteFolder);
+// Only if dbFolder exists
+let dbFolder = path.join(dirname, '..', 'sqlite-databases');
+if (fs.existsSync(dbFolder)) {
+
+  // Read settings for which SQLite-database to use
+  let databaseToUse = fs.readFileSync(path.join(dbFolder, 'database-in-use.json'), 'utf-8').slice(1, -1);
+  databaseToUse = path.join(path.join(dbFolder, databaseToUse));
+  // database connection
+  let db;
+  if (fs.existsSync(databaseToUse)) {
+    db = new Database(databaseToUse);
+  }
+
+  // route for database query (SELECT:s only)
+  app.get('/api/dbquery/:select', (req, res) => {
+    let select = req.params.select.trim();
+    if (!db) {
+      res.json([{ error: 'No database connected!' }]);
+      return;
+    }
+    if ((select + '').toLowerCase().indexOf('select ') !== 0) {
+      res.json([{ error: 'Only SELECT queries can be run!' }]);
+      return;
+    }
+    let result;
+    try {
+      result = db.prepare(select).all();
+    }
+    catch (e) {
+      result = [{ error: e + '' }];
+    }
+    res.json(result);
+  });
+}
+
