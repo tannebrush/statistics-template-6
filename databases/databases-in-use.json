@@ -1,6 +1,6 @@
 [
   {
-    "name": "student-health",
+    "name": "students_health.db",
     "type": "sqlite",
     "file": "students_health.db"
   }
