@@ -6,7 +6,7 @@ createMenu('Analys av psykisk ohälsa i Indien', [
   {
     name: 'Korrelation', sub: [
       { name: 'Akademisk tryck och depression', script: 'sleep_mental_health_correlation.js' },
-      { name: 'Samband mellan finansiell stress och sömn', script: 'financial_sleep.js' }
+      { name: 'Samband mellan finansiell stress och depression', script: 'financial_dep.js' }
     ]
   },
   {
